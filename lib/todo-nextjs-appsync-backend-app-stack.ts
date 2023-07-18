@@ -37,20 +37,32 @@ export class TodoNextjsAppsyncBackendAppStack extends cdk.Stack {
     });
 
     // Lambda function
+    const commonLambdaNodeJsProps: Omit<
+      lambdaNodeJs.NodejsFunctionProps,
+      "entry"
+    > = {
+      handler: "handler",
+      environment: {
+        TODO_TABLE: todoTable.tableName,
+      },
+      // runtimeの指定がないとAppSync側でエラーがt出力される。
+      runtime: lambda.Runtime.NODEJS_18_X,
+    };
+
     const getTodosLambda = new lambdaNodeJs.NodejsFunction(
       this,
       "getTodosHandler",
       {
         entry: path.join(__dirname, "../lambda/getTodos.ts"),
-        handler: "handler",
-        environment: {
-          TODO_TABLE: todoTable.tableName,
-        },
-        // runtimeの指定がないとAppSync側でエラーがt出力される。
-        runtime: lambda.Runtime.NODEJS_18_X,
+        // handler: "handler",
+        // environment: {
+        //   TODO_TABLE: todoTable.tableName,
+        // },
+        // // runtimeの指定がないとAppSync側でエラーがt出力される。
+        // runtime: lambda.Runtime.NODEJS_18_X,
+        ...commonLambdaNodeJsProps,
       }
     );
-
     todoTable.grantReadData(getTodosLambda);
 
     // DataSource
@@ -58,6 +70,33 @@ export class TodoNextjsAppsyncBackendAppStack extends cdk.Stack {
       "getTodosDataSource",
       getTodosLambda
     );
+
+    const addTodoLambda = new lambdaNodeJs.NodejsFunction(
+      this,
+      "addTodoHandler",
+      {
+        entry: path.join(__dirname, "../lambda/addTodo.ts"),
+        ...commonLambdaNodeJsProps,
+      }
+    );
+    todoTable.grantReadWriteData(addTodoLambda);
+
+    const addTodoDataSource = todoApi.addLambdaDataSource(
+      "addTodoDataSource",
+      addTodoLambda
+    );
+
+    // addTodoDataSource.createResolver({
+    //   typeName: "Mutation",
+    //   fieldName: "addTodo",
+    // });
+
+    new appsync.Resolver(this, "MutationAddTodoResolver", {
+      api: todoApi,
+      dataSource: addTodoDataSource,
+      typeName: "Mutation",
+      fieldName: "addTodo",
+    });
 
     new appsync.Resolver(this, "QueryGetTodosResolver", {
       api: todoApi,
