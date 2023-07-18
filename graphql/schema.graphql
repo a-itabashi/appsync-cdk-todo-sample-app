@@ -1,0 +1,12 @@
+scalar AWSTimestamp
+
+type Todo {
+  id: ID!
+  title: String!
+  completed: Boolean!
+  createdAt: AWSTimestamp!
+}
+
+type Query {
+  getTodos: [Todo!]!
+}

@@ -1,0 +1,7 @@
+overwrite: true
+schema:
+  - graphql/schema.graphql
+generates:
+  ./graphql/generated/generated-types.ts:
+    plugins:
+      - typescript
