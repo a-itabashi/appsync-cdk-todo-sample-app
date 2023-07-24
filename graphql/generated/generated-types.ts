@@ -19,14 +19,31 @@ export type AddTodoInput = {
   title: Scalars['String']['input'];
 };
 
+export type CheckTodoInput = {
+  completed: Scalars['Boolean']['input'];
+  id: Scalars['ID']['input'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addTodo?: Maybe<Todo>;
+  checkTodo?: Maybe<Todo>;
+  deleteTodo?: Maybe<Scalars['Boolean']['output']>;
 };
 
 
 export type MutationAddTodoArgs = {
   addTodoInput: AddTodoInput;
+};
+
+
+export type MutationCheckTodoArgs = {
+  checkTodoInput: CheckTodoInput;
+};
+
+
+export type MutationDeleteTodoArgs = {
+  id: Scalars['ID']['input'];
 };
 
 export type Query = {

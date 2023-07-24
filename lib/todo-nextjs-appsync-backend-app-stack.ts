@@ -65,12 +65,6 @@ export class TodoNextjsAppsyncBackendAppStack extends cdk.Stack {
     );
     todoTable.grantReadData(getTodosLambda);
 
-    // DataSource
-    const getTodosDataSource = todoApi.addLambdaDataSource(
-      "getTodosDataSource",
-      getTodosLambda
-    );
-
     const addTodoLambda = new lambdaNodeJs.NodejsFunction(
       this,
       "addTodoHandler",
@@ -81,15 +75,58 @@ export class TodoNextjsAppsyncBackendAppStack extends cdk.Stack {
     );
     todoTable.grantReadWriteData(addTodoLambda);
 
+    const checkTodoLambda = new lambdaNodeJs.NodejsFunction(
+      this,
+      "toggleTodoHandler",
+      {
+        entry: path.join(__dirname, "../lambda/checkTodo.ts"),
+        ...commonLambdaNodeJsProps,
+      }
+    );
+    todoTable.grantReadWriteData(checkTodoLambda);
+
+    const deleteTodoLambda = new lambdaNodeJs.NodejsFunction(
+      this,
+      "deleteTodoHandler",
+      {
+        entry: path.join(__dirname, "../lambda/deleteTodo.ts"),
+        ...commonLambdaNodeJsProps,
+      }
+    );
+    todoTable.grantReadWriteData(deleteTodoLambda);
+
+    // DataSource
+    const getTodosDataSource = todoApi.addLambdaDataSource(
+      "getTodosDataSource",
+      getTodosLambda
+    );
+
     const addTodoDataSource = todoApi.addLambdaDataSource(
       "addTodoDataSource",
       addTodoLambda
+    );
+
+    const checkTodoDataSource = todoApi.addLambdaDataSource(
+      "toggleTodoDataSource",
+      checkTodoLambda
+    );
+
+    const deleteTodoDataSource = todoApi.addLambdaDataSource(
+      "deleteTodoDataSource",
+      deleteTodoLambda
     );
 
     // addTodoDataSource.createResolver({
     //   typeName: "Mutation",
     //   fieldName: "addTodo",
     // });
+
+    new appsync.Resolver(this, "QueryGetTodosResolver", {
+      api: todoApi,
+      dataSource: getTodosDataSource,
+      typeName: "Query",
+      fieldName: "getTodos",
+    });
 
     new appsync.Resolver(this, "MutationAddTodoResolver", {
       api: todoApi,
@@ -98,11 +135,18 @@ export class TodoNextjsAppsyncBackendAppStack extends cdk.Stack {
       fieldName: "addTodo",
     });
 
-    new appsync.Resolver(this, "QueryGetTodosResolver", {
+    new appsync.Resolver(this, "MutationCheckTodoResolver", {
       api: todoApi,
-      dataSource: getTodosDataSource,
-      typeName: "Query",
-      fieldName: "getTodos",
+      dataSource: checkTodoDataSource,
+      typeName: "Mutation",
+      fieldName: "checkTodo",
+    });
+
+    new appsync.Resolver(this, "MutationDeleteTodoResolver", {
+      api: todoApi,
+      dataSource: deleteTodoDataSource,
+      typeName: "Mutation",
+      fieldName: "deleteTodo",
     });
 
     // CfnOutput
